@@ -15,25 +15,32 @@ def login(client, username, password):
 def test_input_sanitization(client, app):
     """Test input sanitization for potential security issues."""
     with app.app_context():
+        # Make sure any pending transactions are rolled back
+        db.session.remove()
+        
         # Create and login as the test user
-        user = User(username="testuser")
-        user.set_password("testpassword")
-        db.session.add(user)
-        db.session.commit()
+        user = User.query.filter_by(username="testuser").first()
+        if not user:
+            user = User(username="testuser")
+            user.set_password("testpassword")
+            db.session.add(user)
+            db.session.commit()
         
         login_response = login(client, "testuser", "testpassword")
         assert login_response.status_code == 200
         
         # Create a test employee to ensure the database has data
-        test_employee = Employee(
-            name="Security Test Employee",
-            employee_id_str="SEC001",
-            contact_details="security@test.com",
-            pay_rate=25.0,
-            is_active=True
-        )
-        db.session.add(test_employee)
-        db.session.commit()
+        test_employee = Employee.query.filter_by(name="Security Test Employee").first()
+        if not test_employee:
+            test_employee = Employee(
+                name="Security Test Employee",
+                employee_id_str="SEC001",
+                contact_details="security@test.com",
+                pay_rate=25.0,
+                is_active=True
+            )
+            db.session.add(test_employee)
+            db.session.commit()
         
         # Test HTML injection in text fields
         html_injection = "<script>alert('XSS');</script>"
@@ -68,8 +75,12 @@ def test_input_sanitization(client, app):
     # If we can still query the Employee table, then the SQL injection didn't work
     with client.application.app_context():
         # This would fail if the SQL injection had succeeded in dropping the table
-        employees = Employee.query.all()
-        assert len(employees) > 0
+        try:
+            employees = Employee.query.all()
+            assert len(employees) > 0
+        except Exception as e:
+            db.session.rollback()
+            pytest.fail(f"SQL query failed: {e}")
 
 def test_numeric_input_validation(client, app):
     """Test validation of numeric inputs to prevent invalid data."""

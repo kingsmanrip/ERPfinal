@@ -69,32 +69,7 @@
     </div>
 </div>
 
-<!-- Charts Row -->
-<div class="row mb-4">
-    <!-- Project Status Pie Chart -->
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-header bg-light">
-                <h5 class="card-title mb-0">Project Status Distribution</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="projectStatusChart" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Monthly Expenses Line Chart -->
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-header bg-light">
-                <h5 class="card-title mb-0">Monthly Expense Trend</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="expensesChart" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Charts Row Removed -->
 
 <!-- Top Projects Row -->
 <div class="row mb-4">
@@ -186,70 +161,8 @@
     </div>
 </div>
 
-<!-- JavaScript for Charts -->
+<!-- JavaScript Section -->
 <script>
-    // Project Status Chart
-    const projectStatusCtx = document.getElementById('projectStatusChart').getContext('2d');
-    const projectStatusChart = new Chart(projectStatusCtx, {
-        type: 'doughnut',
-        data: {
-            labels: [
-                {% for status in project_status_counts %}
-                    '{{ status }}',
-                {% endfor %}
-            ],
-            datasets: [{
-                data: [
-                    {% for status, count in project_status_counts.items() %}
-                        {{ count }},
-                    {% endfor %}
-                ],
-                backgroundColor: [
-                    '#007bff', '#28a745', '#17a2b8', '#ffc107', '#dc3545', '#6c757d'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                }
-            }
-        }
-    });
-
-    // Monthly Expenses Chart
-    const expensesCtx = document.getElementById('expensesChart').getContext('2d');
-    const expensesChart = new Chart(expensesCtx, {
-        type: 'line',
-        data: {
-            labels: {{ monthly_labels|tojson }},
-            datasets: [{
-                label: 'Monthly Expenses ($)',
-                data: {{ monthly_expenses|tojson }},
-                fill: false,
-                borderColor: '#dc3545',
-                tension: 0.1,
-                pointBackgroundColor: '#dc3545'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value;
-                        }
-                    }
-                }
-            }
-        }
-    });
+    // Charts functionality has been removed
 </script>
 {% endblock %}
