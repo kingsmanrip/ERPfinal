@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 offset-lg-2">
+        <h2>{{ title }}</h2>
+        <hr>
+
+        <form method="POST" novalidate>
+            {{ form.csrf_token }}
+
+            <div class="mb-3">
+                {{ form.project_id.label(class="form-label") }}
+                {{ form.project_id(class="form-select" + (" is-invalid" if form.project_id.errors else "")) }}
+                {% if form.project_id.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.project_id.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.invoice_number.label(class="form-label") }}
+                {{ form.invoice_number(class="form-control" + (" is-invalid" if form.invoice_number.errors else "")) }}
+                {% if form.invoice_number.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.invoice_number.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">Optional, a unique identifier for this invoice (e.g., INV-2023-001)</div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.invoice_date.label(class="form-label") }}
+                    {{ form.invoice_date(class="form-control" + (" is-invalid" if form.invoice_date.errors else ""), type="date") }}
+                    {% if form.invoice_date.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.invoice_date.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.due_date.label(class="form-label") }}
+                    {{ form.due_date(class="form-control" + (" is-invalid" if form.due_date.errors else ""), type="date") }}
+                    {% if form.due_date.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.due_date.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="form-text">Optional, leave blank if not applicable</div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.amount.label(class="form-label") }}
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else "")) }}
+                </div>
+                {% if form.amount.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.amount.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.status.label(class="form-label") }}
+                {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else "")) }}
+                {% if form.status.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.status.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.payment_received_date.label(class="form-label") }}
+                {{ form.payment_received_date(class="form-control" + (" is-invalid" if form.payment_received_date.errors else ""), type="date") }}
+                {% if form.payment_received_date.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.payment_received_date.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">If status is "Paid", provide the date payment was received</div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('invoices') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

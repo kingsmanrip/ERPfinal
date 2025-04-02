@@ -1,0 +1,294 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 offset-lg-2">
+        <h2>{{ title }}</h2>
+        <hr>
+
+        <form method="POST" novalidate>
+            {{ form.csrf_token }}
+
+            <div class="mb-3">
+                {{ form.employee_id.label(class="form-label") }}
+                {{ form.employee_id(class="form-select" + (" is-invalid" if form.employee_id.errors else "")) }}
+                {% if form.employee_id.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.employee_id.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.pay_period_start.label(class="form-label") }}
+                    {{ form.pay_period_start(class="form-control" + (" is-invalid" if form.pay_period_start.errors else ""), type="date") }}
+                    {% if form.pay_period_start.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.pay_period_start.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.pay_period_end.label(class="form-label") }}
+                    {{ form.pay_period_end(class="form-control" + (" is-invalid" if form.pay_period_end.errors else ""), type="date") }}
+                    {% if form.pay_period_end.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.pay_period_end.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.gross_amount.label(class="form-label") }}
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    {{ form.gross_amount(class="form-control" + (" is-invalid" if form.gross_amount.errors else "")) }}
+                </div>
+                {% if form.gross_amount.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.gross_amount.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">Total amount before deductions</div>
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Deductions</h5>
+                </div>
+                <div class="card-body">
+                    <div id="deductions-container">
+                        <!-- Deductions will be added here dynamically -->
+                        {% if deductions %}
+                            {% for deduction in deductions %}
+                                <div class="deduction-item mb-3 border-bottom pb-3">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Description</label>
+                                            <input type="text" name="deduction_description[]" class="form-control" value="{{ deduction.description }}" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Amount</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="deduction_amount[]" class="form-control deduction-amount" value="{{ deduction.amount }}" min="0" step="0.01" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Type</label>
+                                            <select name="deduction_type[]" class="form-select" required>
+                                                {% for type in deduction_types %}
+                                                    <option value="{{ type.name }}" {% if deduction.deduction_type.name == type.name %}selected{% endif %}>{{ type.value }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <button type="button" class="btn btn-danger btn-sm remove-deduction">Remove</button>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-12">
+                                            <label class="form-label">Notes</label>
+                                            <textarea name="deduction_notes[]" class="form-control" rows="1">{{ deduction.notes or '' }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="button" id="add-deduction" class="btn btn-outline-primary">Add Deduction</button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6 offset-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Gross Amount:</strong>
+                                        <span id="summary-gross">$0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Total Deductions:</strong>
+                                        <span id="summary-deductions">$0.00</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Net Amount:</strong>
+                                        <span id="summary-net">$0.00</span>
+                                    </div>
+                                    <input type="hidden" name="net_amount" id="net-amount-input" value="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.payment_date.label(class="form-label") }}
+                {{ form.payment_date(class="form-control" + (" is-invalid" if form.payment_date.errors else ""), type="date") }}
+                {% if form.payment_date.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.payment_date.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.payment_method.label(class="form-label") }}
+                {{ form.payment_method(class="form-select" + (" is-invalid" if form.payment_method.errors else "")) }}
+                {% if form.payment_method.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.payment_method.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.notes.label(class="form-label") }}
+                {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows=3) }}
+                {% if form.notes.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.notes.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">Optional, add any notes about adjustments or special circumstances</div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('payroll_report') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Template for new deduction item -->
+<template id="deduction-template">
+    <div class="deduction-item mb-3 border-bottom pb-3">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label">Description</label>
+                <input type="text" name="deduction_description[]" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Amount</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" name="deduction_amount[]" class="form-control deduction-amount" min="0" step="0.01" required>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Type</label>
+                <select name="deduction_type[]" class="form-select" required>
+                    {% for type in deduction_types %}
+                        <option value="{{ type.name }}">{{ type.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-danger btn-sm remove-deduction">Remove</button>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea name="deduction_notes[]" class="form-control" rows="1"></textarea>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deductionsContainer = document.getElementById('deductions-container');
+        const addDeductionBtn = document.getElementById('add-deduction');
+        const deductionTemplate = document.getElementById('deduction-template');
+        const grossAmountInput = document.getElementById('gross_amount');
+        const netAmountInput = document.getElementById('net-amount-input');
+        const summaryGross = document.getElementById('summary-gross');
+        const summaryDeductions = document.getElementById('summary-deductions');
+        const summaryNet = document.getElementById('summary-net');
+        
+        // Function to add a new deduction
+        function addDeduction() {
+            const clone = document.importNode(deductionTemplate.content, true);
+            deductionsContainer.appendChild(clone);
+            
+            // Add event listener to the new remove button
+            const removeBtn = deductionsContainer.lastElementChild.querySelector('.remove-deduction');
+            removeBtn.addEventListener('click', function() {
+                this.closest('.deduction-item').remove();
+                updateSummary();
+            });
+            
+            // Add event listener to the new amount input
+            const amountInput = deductionsContainer.lastElementChild.querySelector('.deduction-amount');
+            amountInput.addEventListener('input', updateSummary);
+        }
+        
+        // Function to update the summary
+        function updateSummary() {
+            const grossAmount = parseFloat(grossAmountInput.value) || 0;
+            let totalDeductions = 0;
+            
+            // Calculate total deductions
+            document.querySelectorAll('.deduction-amount').forEach(function(input) {
+                totalDeductions += parseFloat(input.value) || 0;
+            });
+            
+            const netAmount = Math.max(0, grossAmount - totalDeductions);
+            
+            // Update summary display
+            summaryGross.textContent = '$' + grossAmount.toFixed(2);
+            summaryDeductions.textContent = '$' + totalDeductions.toFixed(2);
+            summaryNet.textContent = '$' + netAmount.toFixed(2);
+            
+            // Update hidden net amount input
+            netAmountInput.value = netAmount.toFixed(2);
+        }
+        
+        // Add event listeners
+        addDeductionBtn.addEventListener('click', addDeduction);
+        grossAmountInput.addEventListener('input', updateSummary);
+        
+        // Add event listeners to existing remove buttons
+        document.querySelectorAll('.remove-deduction').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                this.closest('.deduction-item').remove();
+                updateSummary();
+            });
+        });
+        
+        // Add event listeners to existing amount inputs
+        document.querySelectorAll('.deduction-amount').forEach(function(input) {
+            input.addEventListener('input', updateSummary);
+        });
+        
+        // Initialize summary
+        updateSummary();
+    });
+</script>
+{% endblock %}

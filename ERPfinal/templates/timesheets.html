@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% block title %}Timesheets{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Timesheets</h1>
+        <div class="d-flex">
+            <div class="dropdown me-2">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Export
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" href="{{ url_for('export_timesheets', format='excel') }}">Excel (.xlsx)</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_timesheets', format='pdf') }}">PDF</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_timesheets', format='csv') }}">CSV</a></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('add_timesheet') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Timesheet
+            </a>
+        </div>
+    </div>
+    <hr>
+
+    {% if timesheets.items %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Employee</th>
+                    <th>Project</th>
+                    <th>Entry Time</th>
+                    <th>Exit Time</th>
+                    <th>Lunch (min)</th>
+                    <th>Hours</th>
+                    <th>Pay Rate</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for timesheet in timesheets.items %}
+                <tr>
+                    <td>{{ timesheet.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ timesheet.employee.name }}</td>
+                    <td>{{ timesheet.project.name }}</td>
+                    <td>{{ timesheet.entry_time.strftime('%H:%M') }}</td>
+                    <td>{{ timesheet.exit_time.strftime('%H:%M') }}</td>
+                    <td>{{ timesheet.lunch_duration_minutes }}</td>
+                    <td>{{ "%.2f"|format(timesheet.calculated_hours) }}</td>
+                    <td>${{ "%.2f"|format(timesheet.employee.pay_rate) }}</td>
+                    <td>${{ "%.2f"|format(timesheet.calculated_hours * timesheet.employee.pay_rate) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Timesheet pages">
+        <ul class="pagination justify-content-center">
+            {% if timesheets.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('timesheets', page=timesheets.prev_num) }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Previous</span>
+            </li>
+            {% endif %}
+
+            {% for page_num in timesheets.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == timesheets.page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('timesheets', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if timesheets.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('timesheets', page=timesheets.next_num) }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    {% else %}
+    <div class="alert alert-info">
+        No timesheet entries found. <a href="{{ url_for('add_timesheet') }}" class="alert-link">Add your first timesheet entry</a>.
+    </div>
+    {% endif %}
+{% endblock %}

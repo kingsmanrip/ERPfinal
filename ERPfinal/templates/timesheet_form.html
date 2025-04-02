@@ -1,0 +1,105 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 offset-lg-2">
+        <h2>{{ title }}</h2>
+        <hr>
+
+        <form method="POST" novalidate>
+            {{ form.csrf_token }}
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.employee_id.label(class="form-label") }}
+                    {{ form.employee_id(class="form-select" + (" is-invalid" if form.employee_id.errors else "")) }}
+                    {% if form.employee_id.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.employee_id.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.project_id.label(class="form-label") }}
+                    {{ form.project_id(class="form-select" + (" is-invalid" if form.project_id.errors else "")) }}
+                    {% if form.project_id.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.project_id.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.date.label(class="form-label") }}
+                {{ form.date(class="form-control" + (" is-invalid" if form.date.errors else ""), type="date") }}
+                {% if form.date.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.date.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.entry_time.label(class="form-label") }}
+                    {{ form.entry_time(class="form-control" + (" is-invalid" if form.entry_time.errors else ""), type="time") }}
+                    {% if form.entry_time.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.entry_time.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.exit_time.label(class="form-label") }}
+                    {{ form.exit_time(class="form-control" + (" is-invalid" if form.exit_time.errors else ""), type="time") }}
+                    {% if form.exit_time.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.exit_time.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.lunch_duration_minutes.label(class="form-label") }}
+                <div class="input-group">
+                    {{ form.lunch_duration_minutes(class="form-control" + (" is-invalid" if form.lunch_duration_minutes.errors else "")) }}
+                    <span class="input-group-text">minutes</span>
+                </div>
+                {% if form.lunch_duration_minutes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.lunch_duration_minutes.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">
+                    <ul class="mb-0">
+                        <li>For 1-hour lunch breaks, only 30 minutes are deducted from total hours</li>
+                        <li>For 30-minute breaks or less, no time is deducted</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('timesheets') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

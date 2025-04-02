@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+
+{% block title %}Future Enhancements - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Future Enhancements</h1>
+    <p class="lead">The Mauricio PDQ ERP System has a roadmap for continued improvement. Below are the planned enhancements that will expand functionality and improve user experience.</p>
+
+    <div class="row mt-5">
+        {% for enhancement in enhancements %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">{{ enhancement.title }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ enhancement.description }}</p>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">Priority: {{ enhancement.priority }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-5">
+        <h2 class="mb-3">Suggest an Enhancement</h2>
+        <p>Have an idea for improving the system? We'd love to hear it!</p>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('suggest_enhancement') }}">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Enhancement Title</label>
+                        {{ form.title(class="form-control", placeholder="Enter a brief title for your suggestion") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        {{ form.description(class="form-control", rows=3, placeholder="Describe your enhancement idea in detail") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Suggested Priority</label>
+                        {{ form.priority(class="form-select") }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Suggestion</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

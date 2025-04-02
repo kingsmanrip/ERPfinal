@@ -1,0 +1,278 @@
+{% extends "layout.html" %}
+{% block title %}Project: {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Project: {{ project.name }}</h2>
+    <a href="{{ url_for('edit_project', id=project.id) }}" class="btn btn-info">Edit Project</a>
+</div>
+<hr>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Project Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Project ID:</dt>
+                    <dd class="col-sm-9">{{ project.project_id_str or 'Not specified' }}</dd>
+
+                    <dt class="col-sm-3">Client:</dt>
+                    <dd class="col-sm-9">{{ project.client_name or 'Not specified' }}</dd>
+
+                    <dt class="col-sm-3">Location:</dt>
+                    <dd class="col-sm-9">{{ project.location or 'Not specified' }}</dd>
+
+                    <dt class="col-sm-3">Start Date:</dt>
+                    <dd class="col-sm-9">{{ project.start_date.strftime('%Y-%m-%d') if project.start_date else 'Not specified' }}</dd>
+
+                    <dt class="col-sm-3">End Date:</dt>
+                    <dd class="col-sm-9">{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else 'Not specified' }}</dd>
+
+                    <dt class="col-sm-3">Status:</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-{{ 'info' if project.status.name == 'PENDING' else 'success' if project.status.name == 'IN_PROGRESS' else 'primary' if project.status.name == 'COMPLETED' else 'warning' if project.status.name == 'INVOICED' else 'dark' if project.status.name == 'PAID' else 'secondary' }}">
+                            {{ project.status.value }}
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-3">Description:</dt>
+                    <dd class="col-sm-9">{{ project.description or 'No description provided' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Financial Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Contract Value:</span>
+                    <span class="fw-bold">{{ "$%.2f"|format(project.contract_value) if project.contract_value else "Not set" }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Labor Cost:</span>
+                    <span>{{ "$%.2f"|format(labor_cost) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Material Cost:</span>
+                    <span>{{ "$%.2f"|format(material_cost) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Other Expenses:</span>
+                    <span>{{ "$%.2f"|format(other_expenses) }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Cost:</span>
+                    <span class="fw-bold">{{ "$%.2f"|format(total_cost) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Estimated Profit:</span>
+                    <span class="fw-bold {{ 'text-success' if profit > 0 else 'text-danger' if profit < 0 else '' }}">
+                        {{ "$%.2f"|format(profit) }}
+                        ({{ "%.1f%%"|format((profit / project.contract_value * 100) if project.contract_value else 0) }})
+                    </span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Actual Revenue:</span>
+                    <span class="fw-bold">{{ "$%.2f"|format(project.actual_revenue) }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Actual Net Profit:</span>
+                    <span class="fw-bold {{ 'text-success' if project.actual_net_profit > 0 else 'text-danger' if project.actual_net_profit < 0 else '' }}">
+                        {{ "$%.2f"|format(project.actual_net_profit) }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Buttons -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('add_timesheet', project_id=project.id) }}" class="btn btn-primary">Add Timesheet</a>
+                    <a href="{{ url_for('add_material', project_id=project.id) }}" class="btn btn-success">Add Material</a>
+                    <a href="{{ url_for('add_expense', project_id=project.id) }}" class="btn btn-warning">Add Expense</a>
+                    <a href="{{ url_for('add_invoice', project_id=project.id) }}" class="btn btn-secondary">Create Invoice</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timesheets Tab -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Timesheets</h5>
+    </div>
+    <div class="card-body">
+        {% if timesheets %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Employee</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Lunch Break</th>
+                        <th>Hours</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for timesheet in timesheets %}
+                    <tr>
+                        <td>{{ timesheet.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ timesheet.employee.name }}</td>
+                        <td>{{ timesheet.entry_time.strftime('%H:%M') }}</td>
+                        <td>{{ timesheet.exit_time.strftime('%H:%M') }}</td>
+                        <td>{{ timesheet.lunch_duration_minutes }} min</td>
+                        <td>{{ "%.2f"|format(timesheet.calculated_hours) }}</td>
+                        <td>{{ "$%.2f"|format(timesheet.calculated_hours * timesheet.employee.pay_rate) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No timesheet entries recorded for this project.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Materials Tab -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Materials</h5>
+    </div>
+    <div class="card-body">
+        {% if materials %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Supplier</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for material in materials %}
+                    <tr>
+                        <td>{{ material.purchase_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ material.description }}</td>
+                        <td>{{ material.category }}</td>
+                        <td>{{ material.supplier }}</td>
+                        <td>{{ "$%.2f"|format(material.cost) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No materials recorded for this project.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Expenses Tab -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Other Expenses</h5>
+    </div>
+    <div class="card-body">
+        {% if expenses %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Vendor</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ expense.description }}</td>
+                        <td>{{ expense.category }}</td>
+                        <td>{{ expense.supplier_vendor }}</td>
+                        <td>{{ "$%.2f"|format(expense.amount) }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if expense.payment_status.name == 'PAID' else 'warning' if expense.payment_status.name == 'PENDING' else 'secondary' }}">
+                                {{ expense.payment_status.value }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No additional expenses recorded for this project.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Invoices Tab -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Invoices</h5>
+    </div>
+    <div class="card-body">
+        {% if invoices %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Due Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Payment Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td>{{ invoice.invoice_number }}</td>
+                        <td>{{ invoice.invoice_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date else 'Not set' }}</td>
+                        <td>{{ "$%.2f"|format(invoice.amount) }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if invoice.status.name == 'PAID' else 'warning' if invoice.status.name == 'PENDING' else 'info' if invoice.status.name == 'PROCESSED' else 'secondary' }}">
+                                {{ invoice.status.value }}
+                            </span>
+                        </td>
+                        <td>{{ invoice.payment_received_date.strftime('%Y-%m-%d') if invoice.payment_received_date else 'Not paid' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No invoices created for this project.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

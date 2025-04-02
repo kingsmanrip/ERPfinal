@@ -1,0 +1,349 @@
+{% extends "layout.html" %}
+{% block title %}Payroll Report{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h1>Payroll Report</h1>
+    <div class="d-flex">
+        <div class="dropdown me-2">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Export
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('export_payroll', format='excel') }}">Excel (.xlsx)</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('export_payroll', format='pdf') }}">PDF</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('export_payroll', format='csv') }}">CSV</a></li>
+            </ul>
+        </div>
+        <a href="{{ url_for('record_payroll_payment') }}" class="btn btn-primary">Record Payment</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Week of {{ current_week_start.strftime('%b %d, %Y') }} to {{ current_week_end.strftime('%b %d, %Y') }}</h5>
+            <div>
+                <a href="{{ url_for('payroll_report', date=prev_week.strftime('%Y-%m-%d')) }}" class="btn btn-sm btn-outline-primary me-2">
+                    <i class="bi bi-arrow-left"></i> Previous Week
+                </a>
+                <form method="GET" class="d-inline-flex">
+                    <input type="date" name="date" class="form-control form-control-sm me-2">
+                    <button type="submit" class="btn btn-sm btn-primary">View Week</button>
+                </form>
+                <a href="{{ url_for('payroll_report', date=next_week.strftime('%Y-%m-%d')) }}" class="btn btn-sm btn-outline-primary ms-2">
+                    Next Week <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col text-end">
+            </div>
+        </div>
+
+        <!-- Payment Method Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Hours</h5>
+                        <h3 class="mb-0">{{ "%.2f"|format(total_weekly_hours) }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Cash Payments</h5>
+                        <h3 class="mb-0">${{ "%.2f"|format(payment_method_totals.CASH.total) }}</h3>
+                        <small>{{ payment_method_totals.CASH.count }} payment(s)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Check Payments</h5>
+                        <h3 class="mb-0">${{ "%.2f"|format(payment_method_totals.CHECK.total) }}</h3>
+                        <small>{{ payment_method_totals.CHECK.count }} payment(s)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if weekly_data %}
+            <h5>Weekly Hours & Payments</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Hours</th>
+                            <th>Pay Rate</th>
+                            <th>Amount Due</th>
+                            <th>Payments</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp_id, data in weekly_data.items() %}
+                        <tr>
+                            <td>{{ data.employee.name }}</td>
+                            <td>{{ "%.2f"|format(data.total_hours) }}</td>
+                            <td>${{ "%.2f"|format(data.employee.pay_rate) }}</td>
+                            <td>${{ "%.2f"|format(data.potential_pay) }}</td>
+                            <td>
+                                {% if data.payments is defined and data.payments %}
+                                    {% for payment in data.payments %}
+                                        <div class="d-flex justify-content-between">
+                                            <span>
+                                                ${{ "%.2f"|format(payment.gross_amount) }} gross
+                                                {% if payment.deductions and payment.deductions|length > 0 %}
+                                                    <a href="#" data-bs-toggle="tooltip" data-bs-html="true" title="
+                                                        <strong>Deductions:</strong><br>
+                                                        {% for deduction in payment.deductions %}
+                                                            {{ deduction.description }}: ${{ '%.2f'|format(deduction.amount) }}<br>
+                                                        {% endfor %}
+                                                        <strong>Total Deductions:</strong> ${{ '%.2f'|format(payment.total_deductions) }}
+                                                    "><i class="bi bi-info-circle text-primary"></i></a>
+                                                    <small class="text-muted">(${{ "%.2f"|format(payment.total_deductions) }} deductions)</small>
+                                                {% endif %}
+                                            </span>
+                                            <span class="badge bg-{{ 'success' if payment.payment_method.name == 'CASH' else 'info' if payment.payment_method.name == 'CHECK' else 'secondary' }}">
+                                                {{ payment.payment_method.value }}
+                                                {% if payment.payment_method.name == 'CHECK' and payment.check_number %}
+                                                    #{{ payment.check_number }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">No payments</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if data.payments is defined and data.payments %}
+                                    {% set total_paid = 0 %}
+                                    {% for payment in data.payments %}
+                                        {% set total_paid = total_paid + payment.amount %}
+                                    {% endfor %}
+                                    {% if total_paid >= data.potential_pay %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Partial</span>
+                                        <div class="small">${{ "%.2f"|format(data.potential_pay - total_paid) }} remaining</div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-danger">Unpaid</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-dark">
+                            <th>Totals</th>
+                            <th>{{ "%.2f"|format(total_weekly_hours) }}</th>
+                            <th></th>
+                            <th>${{ "%.2f"|format(weekly_data.values()|sum(attribute='potential_pay')) }}</th>
+                            <th>
+                                <div>
+                                    <div><strong>Gross:</strong> ${{ "%.2f"|format(payment_method_totals.CASH.total + payment_method_totals.CHECK.total) }}</div>
+                                    <div><strong>Net:</strong> ${{ "%.2f"|format((payment_method_totals.CASH.total_after_deductions if 'total_after_deductions' in payment_method_totals.CASH else 0) + 
+                                        (payment_method_totals.CHECK.total_after_deductions if 'total_after_deductions' in payment_method_totals.CHECK else 0)) }}</div>
+                                </div>
+                            </th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <h5 class="mt-4">Timesheet Details</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Project</th>
+                            <th>Date</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Lunch (min)</th>
+                            <th>Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp_id, data in weekly_data.items() %}
+                            {% for ts in data.timesheets %}
+                                <tr>
+                                    <td>{{ ts.employee.name }}</td>
+                                    <td>{{ ts.project.name }}</td>
+                                    <td>{{ ts.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ ts.entry_time.strftime('%H:%M') }}</td>
+                                    <td>{{ ts.exit_time.strftime('%H:%M') }}</td>
+                                    <td>{{ ts.lunch_duration_minutes }}</td>
+                                    <td>{{ "%.2f"|format(ts.calculated_hours) }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                No timesheet entries found for this week.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if recorded_payments %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Recorded Payments</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Payment Date</th>
+                        <th>Pay Period</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in recorded_payments %}
+                        <tr>
+                            <td>{{ payment.employee.name }}</td>
+                            <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ payment.pay_period_start.strftime('%Y-%m-%d') }} to {{ payment.pay_period_end.strftime('%Y-%m-%d') }}</td>
+                            <td>${{ "%.2f"|format(payment.amount) }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if payment.payment_method.name == 'CASH' else 'info' if payment.payment_method.name == 'CHECK' else 'secondary' }}">
+                                    {{ payment.payment_method.value }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if payment.payment_method.name == 'CHECK' and payment.check_number %}
+                                    Check #{{ payment.check_number }}
+                                    {% if payment.bank_name %}
+                                        ({{ payment.bank_name }})
+                                    {% endif %}
+                                {% elif payment.notes %}
+                                    {{ payment.notes }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-dark">
+                        <th colspan="3">Total</th>
+                        <th>${{ "%.2f"|format(recorded_payments|sum(attribute='amount')) }}</th>
+                        <th colspan="2"></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Method Breakdown -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Cash Payments</h5>
+            </div>
+            <div class="card-body">
+                {% if payment_method_totals.CASH.payments %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payment_method_totals.CASH.payments %}
+                                    <tr>
+                                        <td>{{ payment.employee.name }}</td>
+                                        <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>${{ "%.2f"|format(payment.amount) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-success">
+                                    <th colspan="2">Total Cash</th>
+                                    <th>${{ "%.2f"|format(payment_method_totals.CASH.total) }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No cash payments recorded for this period.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Check Payments</h5>
+            </div>
+            <div class="card-body">
+                {% if payment_method_totals.CHECK.payments %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Check #</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payment_method_totals.CHECK.payments %}
+                                    <tr>
+                                        <td>{{ payment.employee.name }}</td>
+                                        <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ payment.check_number or 'N/A' }}</td>
+                                        <td>${{ "%.2f"|format(payment.amount) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-info">
+                                    <th colspan="3">Total Check</th>
+                                    <th>${{ "%.2f"|format(payment_method_totals.CHECK.total) }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No check payments recorded for this period.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    No payments recorded for this week.
+</div>
+{% endif %}
+{% endblock %}

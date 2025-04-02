@@ -1,0 +1,225 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <div class="card">
+                <div class="card-header">
+                    <h2>{{ title }}</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.csrf_token }}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.vendor_name.label(class="form-label") }}
+                                {{ form.vendor_name(class="form-control" + (" is-invalid" if form.vendor_name.errors else "")) }}
+                                {% if form.vendor_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.vendor_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.project_id.label(class="form-label") }}
+                                {{ form.project_id(class="form-select" + (" is-invalid" if form.project_id.errors else "")) }}
+                                {% if form.project_id.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.project_id.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Optional: Link to a specific project</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else "")) }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                {{ form.amount.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else "")) }}
+                                </div>
+                                {% if form.amount.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.amount.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.issue_date.label(class="form-label") }}
+                                {{ form.issue_date(class="form-control" + (" is-invalid" if form.issue_date.errors else ""), type="date") }}
+                                {% if form.issue_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.issue_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.due_date.label(class="form-label") }}
+                                {{ form.due_date(class="form-control" + (" is-invalid" if form.due_date.errors else ""), type="date") }}
+                                {% if form.due_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.due_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.category.label(class="form-label") }}
+                                {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                                {% if form.category.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.category.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.status.label(class="form-label") }}
+                                {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else ""), id="status_select") }}
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.status.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div id="payment_details" class="{% if form.status.data != 'PAID' %}d-none{% endif %}">
+                            <h4>Payment Details</h4>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.payment_method.label(class="form-label") }}
+                                    {{ form.payment_method(class="form-select" + (" is-invalid" if form.payment_method.errors else ""), id="payment_method_select") }}
+                                    {% if form.payment_method.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.payment_method.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.payment_date.label(class="form-label") }}
+                                    {{ form.payment_date(class="form-control" + (" is-invalid" if form.payment_date.errors else ""), type="date") }}
+                                    {% if form.payment_date.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.payment_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div id="check_details" class="row mb-3 {% if form.payment_method.data != 'CHECK' %}d-none{% endif %}">
+                                <div class="col-md-6">
+                                    {{ form.check_number.label(class="form-label") }}
+                                    {{ form.check_number(class="form-control" + (" is-invalid" if form.check_number.errors else "")) }}
+                                    {% if form.check_number.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.check_number.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.bank_name.label(class="form-label") }}
+                                    {{ form.bank_name(class="form-control" + (" is-invalid" if form.bank_name.errors else "")) }}
+                                    {% if form.bank_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.bank_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows=3) }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.notes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Optional additional notes about this payment</div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{{ url_for('accounts_payable') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if payable %}Update{% else %}Save{% endif %} Record
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle payment details based on status
+        const statusSelect = document.getElementById('status_select');
+        const paymentDetails = document.getElementById('payment_details');
+        
+        statusSelect.addEventListener('change', function() {
+            if (this.value === 'PAID') {
+                paymentDetails.classList.remove('d-none');
+            } else {
+                paymentDetails.classList.add('d-none');
+            }
+        });
+        
+        // Toggle check details based on payment method
+        const paymentMethodSelect = document.getElementById('payment_method_select');
+        const checkDetails = document.getElementById('check_details');
+        
+        paymentMethodSelect.addEventListener('change', function() {
+            if (this.value === 'CHECK') {
+                checkDetails.classList.remove('d-none');
+            } else {
+                checkDetails.classList.add('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %}

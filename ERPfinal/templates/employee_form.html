@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 offset-lg-2">
+        <h2>{{ title }}</h2>
+        <hr>
+
+        <form method="POST" novalidate>
+            {{ form.csrf_token }}
+
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                {% if form.name.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.name.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.employee_id_str.label(class="form-label") }}
+                {{ form.employee_id_str(class="form-control" + (" is-invalid" if form.employee_id_str.errors else "")) }}
+                {% if form.employee_id_str.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.employee_id_str.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.contact_details.label(class="form-label") }}
+                {{ form.contact_details(class="form-control" + (" is-invalid" if form.contact_details.errors else ""), rows=3) }}
+                {% if form.contact_details.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.contact_details.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">Phone, email, address, etc.</div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.pay_rate.label(class="form-label") }}
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    {{ form.pay_rate(class="form-control" + (" is-invalid" if form.pay_rate.errors else "")) }}
+                </div>
+                {% if form.pay_rate.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.pay_rate.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.payment_method_preference.label(class="form-label") }}
+                {{ form.payment_method_preference(class="form-select" + (" is-invalid" if form.payment_method_preference.errors else "")) }}
+                {% if form.payment_method_preference.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.payment_method_preference.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.hire_date.label(class="form-label") }}
+                {{ form.hire_date(class="form-control" + (" is-invalid" if form.hire_date.errors else ""), type="date") }}
+                {% if form.hire_date.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.hire_date.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3 form-check">
+                {{ form.is_active(class="form-check-input") }}
+                {{ form.is_active.label(class="form-check-label") }}
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('employees') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
